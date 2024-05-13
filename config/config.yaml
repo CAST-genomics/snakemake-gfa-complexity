@@ -1,0 +1,20 @@
+executor: slurm
+jobs: 16
+cores: 16
+
+latency-wait: 60
+keep-going: true
+
+
+# Use these if different rules use different conda environments
+# And so that process can be shared easily
+#use-conda: true
+#conda-frontend: conda
+
+cluster:
+  name: slurm
+  partition: ind-shared
+  account: ddp268
+  nodes: 1
+  cpus-per-task: 4
+  mem: 8GB

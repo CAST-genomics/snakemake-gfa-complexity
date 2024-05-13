@@ -2,3 +2,78 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+
+"""
+Usage:
+snakemake --configfile profile/config.yaml -C trait=[my_trait] <-n>
+
+snakemake --configfile config/config.yaml -C trait=PASS_Schizophrenia_Pardinas2018 -n
+"""
+
+SUMSTAT_DIR = "/expanse/lustre/projects/ddp412/tamariutabartell/sumstats/"
+HOME_DIR = "/home/wwford/analysis/"
+TRAIT = config["trait"]
+
+rule all:
+    input:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".scores"
+
+rule sumstats_to_plink:
+    input:
+        SUMSTAT_DIR + TRAIT + ".sumstats"
+    output:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".assoc"
+    script:
+        "scripts/sumstats_to_plinklinear.py"
+
+rule sort_plink:
+    input:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".assoc"
+    output:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".assoc.sorted"
+    shell:
+        """
+        (head -n 1 {input} \
+        && tail -n +2 {input} \
+        | sort -t$'\t' -k7,7 -nr ) > {output}
+        """
+
+rule plink_to_bed:
+    input:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".assoc.sorted"
+    output:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".sig.filtered.bed"
+    script:
+        "scripts/plinklinear_to_bed.py"
+
+rule bed_to_subgraphs:
+    input:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".sig.filtered.bed"
+    output:
+        HOME_DIR + TRAIT + "/subset_graphs/.success",
+        HOME_DIR + TRAIT + "/subset_graphs/*.gfa"
+    script:
+        "scripts/bed_to_gfas.py"
+
+rule subgraph_to_complexity:
+    input:  
+        HOME_DIR + TRAIT + "/subset_graphs/{range}.gfa",
+        HOME_DIR + TRAIT + "/subset_graphs/.success"
+    output:
+        HOME_DIR + TRAIT + "/scores/{range}.processed", 
+    resources:
+        time = 600,
+        ntasks = 1
+    script:
+        "scripts/gfa_to_complexity.py"
+
+rule concat_complexties:
+    input:
+        files = HOME_DIR + TRAIT + "/scores/*.processed"
+    output:
+        HOME_DIR + TRAIT + "/" + TRAIT + ".scores"
+    shell:
+        """
+        touch {output}
+        cat {input} >> {output}
+        """

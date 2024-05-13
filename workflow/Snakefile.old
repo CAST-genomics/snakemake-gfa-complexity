@@ -1,0 +1,28 @@
+# Main entrypoint of the workflow. 
+# Please follow the best practices: 
+# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
+# in particular regarding the standardized folder structure mentioned there. 
+
+import os
+
+# Get a list of input files in the directory
+
+INPUT_DIR = "/home/wwford/analysis/UKB_460K.body_HEIGHTz/subset_graphs_10e-8/"
+OUT_FILES = os.listdir(INPUT_DIR)
+
+# Define a rule for processing each input file
+rule process_file:
+    input:
+        "/home/wwford/analysis/UKB_460K.body_HEIGHTz/subset_graphs_10e-8/{file}"
+    output:
+        "/home/wwford/analysis/UKB_460K.body_HEIGHTz/scores/{file}.processed"
+    shell:
+        "sbatch -J {wildcards.file} /home/wwford/analysis/UKB_460K.body_HEIGHTz/complexity.slurm {input} {output}"
+
+rule concatenate_files:
+    input:
+        files = expand("/home/wwford/analysis/UKB_460K.body_HEIGHTz/scores/{file}.processed", file=OUT_FILES)
+    output:
+        "output/UKB_460K.body_HEIGHTz.scores"
+    shell:
+        "cat {input} > {output}"

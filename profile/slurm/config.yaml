@@ -1,0 +1,13 @@
+jobs: 16
+cores: 16
+use-conda: true
+latency-wait: 60
+keep-going: true
+conda-frontend: conda
+
+executor: slurm
+default-resources:
+    slurm_account: ddp268
+    slurm_partition: ind-shared
+    runtime: 10
+    nodes: 1
