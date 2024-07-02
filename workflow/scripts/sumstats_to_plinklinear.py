@@ -10,10 +10,14 @@
 #M   rs3094315   00  A   file_name   14916.610   *  -0.253  000
 #M   rs1048488   00  T   file_name   14481.670   *  -0.238  000
 #```
+"""
+Usage: python sumstats_to_plinklinear.py <trait.sumstats> <output>
 
-# Usage: python sumstats_to_plinklinear.py <trait.sumstats> <output>
-# i.e. python sumstats_to_plinklinear.py /expanse/lustre/projects/ddp412/tamariutabartell/sumstats/UKB_460K.body_HEIGHTz.sumstats UKB_460K.body_HEIGHTz.assoc
-
+SCRIPT_DIR="/home/wwford/analysis/snakemake-gfa-complexity/workflow/scripts/"
+SUMSTAT_DIR="/expanse/lustre/projects/ddp412/tamariutabartell/sumstats/"
+python "$SCRIPT_DIR"sumstats_to_plinklinear.py  \
+    "$SUMSTAT_DIR"UKB_460K.body_HEIGHTz.sumstats UKB_460K.body_HEIGHTz.assoc
+"""
 import subprocess
 import sys
 import os
@@ -58,7 +62,7 @@ def format_line(line, mapper):
     values = line.split("\t")
     if len(values) == 6:
         SNP, A1, A2, N, CHISQ, Z = values
-    if len(values) == 5:
+    elif len(values) == 5:
         SNP, A1, A2, N, Z = values
         CHISQ = "*"
     else:
@@ -98,7 +102,7 @@ class coordsMapper():
         self.leftovers.close()
 
 def get_p(Z):
-    return 1 - norm.cdf(abs(Z))
+    return norm.sf(abs(Z))
 
 def snakemake_call(path_input, path_output):
     # Verify inputs
@@ -130,13 +134,11 @@ def snakemake_call(path_input, path_output):
 
 
 if __name__ == "__main__":
-    try:
+    if "--snakemake" in sys.argv:
         import snakemake
         # Check if the script is executed within a Snakemake rule
         if snakemake:
             # Call my_function with input and output files from Snakemake
             snakemake_call(snakemake.input[0], snakemake.output[0])
-            return
-    except ImportError:
-        # Handle the non snakemake call
+    else:
         main()
